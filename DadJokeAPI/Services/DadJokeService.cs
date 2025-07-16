@@ -21,32 +21,32 @@ namespace DadJokeConsoleApi.Services
 
         public DadJoke GetById(int id) => _context.Jokes.Find(id);
 
-        public DadJoke Add(string jokeText)
+        public async Task<DadJoke> Add(string jokeText)
         {
             var joke = new DadJoke { Joke = jokeText };
             _context.Jokes.Add(joke);
             _context.SaveChanges();
-            _redis.RemoveKeyAsync("all_jokes");
+            await _redis.RemoveKeyAsync("all_jokes");
             return joke;
         }
 
-        public bool Delete(int id)
+        public async Task<bool> Delete(int id)
         {
             var joke = GetById(id);
             if (joke == null) return false;
             _context.Jokes.Remove(joke);
             _context.SaveChanges();
-            _redis.RemoveKeyAsync("all_jokes");
+            await _redis.RemoveKeyAsync("all_jokes");
             return true;
         }
 
-        public bool Update(int id, string newText)
+        public async Task<bool> Update(int id, string newText)
         {
             var joke = GetById(id);
             if (joke == null) return false;
             joke.Joke = newText;
             _context.SaveChanges();
-            _redis.RemoveKeyAsync("all_jokes");
+            await _redis.RemoveKeyAsync("all_jokes");
             return true;
         }
 
@@ -59,33 +59,33 @@ namespace DadJokeConsoleApi.Services
         //    return _context.Jokes.Skip(index).FirstOrDefault();
         //}
 
-        public async Task<DadJoke?> GetRandomAsync()
+        public async Task<(DadJoke? joke, string source)> GetRandomAsync()
         {
             string cacheKey = "all_jokes";
 
-            // Step 1: Try to get all jokes from Redis
             var cached = await _redis.GetValueAsync(cacheKey);
             List<DadJoke>? jokes;
+            string source;
 
             if (cached != null)
             {
                 jokes = JsonSerializer.Deserialize<List<DadJoke>>(cached);
+                source = "Redis";
             }
             else
             {
-                // Step 2: Getting from DB if not found in Redis
                 jokes = _context.Jokes.ToList();
-                if (jokes == null || jokes.Count == 0) return null;
+                if (jokes == null || jokes.Count == 0) return (null, "SQL Server");
 
                 var jokesJson = JsonSerializer.Serialize(jokes);
                 await _redis.SetValueAsync(cacheKey, jokesJson, TimeSpan.FromMinutes(5));
+                source = "SQL Server";
             }
 
-            // Step 3: Pick a random joke from the list
-            if (jokes == null || jokes.Count == 0) return null;
             var randomIndex = new Random().Next(0, jokes.Count);
-            return jokes[randomIndex];
+            return (jokes[randomIndex], source);
         }
+
 
     }
 }

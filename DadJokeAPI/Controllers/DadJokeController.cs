@@ -39,24 +39,24 @@ namespace DadJokeAPI.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] string jokeText)
+        public async Task<IActionResult> Create([FromBody] string jokeText)
         {
-            var newJoke = _jokeService.Add(jokeText);
+            var newJoke = await _jokeService.Add(jokeText);
             return CreatedAtAction(nameof(GetById), new { id = newJoke.Id }, newJoke);
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] string newText)
+        public async Task<IActionResult> Update(int id, [FromBody] string newText)
         {
-            var success = _jokeService.Update(id, newText);
-            return success ? Ok() : NotFound();
+            var success = await _jokeService.Update(id, newText);
+            return success ? Ok("Updated Successfully.") : NotFound("Failed to update.");
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var success = _jokeService.Delete(id);
-            return success ? Ok() : NotFound();
+            var success = await _jokeService.Delete(id);
+            return success ? Ok("Deleted successfully.") : NotFound("Joke not found.");
         }
 
         //[HttpGet("random")]
@@ -69,10 +69,7 @@ namespace DadJokeAPI.Controllers
         [HttpGet("random")]
         public async Task<IActionResult> GetRandom()
         {
-            var joke = await _jokeService.GetRandomAsync();
-
-            var isCached = await _redis.GetValueAsync("all_jokes") != null;
-            var source = isCached ? "Redis" : "SQL Server";
+            var (joke, source) = await _jokeService.GetRandomAsync();
 
             Response.Headers.Add("X-Data-Source", source);
             return joke != null ? Ok(joke) : NotFound("No jokes found.");
