@@ -20,7 +20,7 @@ builder.Services.AddDbContext<DadJokeDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DadJokeAPI")));
 builder.Services.AddScoped<JokeService>();
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<RedisCacheService>();
+builder.Services.AddSingleton<RedisCacheService>();
 
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
 builder.Services.Configure<JwtSettings>(jwtSection);

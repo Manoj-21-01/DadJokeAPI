@@ -9,6 +9,11 @@ namespace DadJokeConsoleApi.Services
     {
         private readonly IDatabase _database;
 
+        public async Task RemoveKeyAsync(string key)
+        {
+            await _database.KeyDeleteAsync(key);
+        }
+
         public RedisCacheService(IConfiguration configuration)
         {
             var connectionString = configuration.GetSection("Redis")["ConnectionString"];

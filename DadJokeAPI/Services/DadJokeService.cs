@@ -26,6 +26,7 @@ namespace DadJokeConsoleApi.Services
             var joke = new DadJoke { Joke = jokeText };
             _context.Jokes.Add(joke);
             _context.SaveChanges();
+            _redis.RemoveKeyAsync("all_jokes");
             return joke;
         }
 
@@ -35,6 +36,7 @@ namespace DadJokeConsoleApi.Services
             if (joke == null) return false;
             _context.Jokes.Remove(joke);
             _context.SaveChanges();
+            _redis.RemoveKeyAsync("all_jokes");
             return true;
         }
 
@@ -44,6 +46,7 @@ namespace DadJokeConsoleApi.Services
             if (joke == null) return false;
             joke.Joke = newText;
             _context.SaveChanges();
+            _redis.RemoveKeyAsync("all_jokes");
             return true;
         }
 
